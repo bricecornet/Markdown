@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Markdown ⇄ HTML — Convertisseur</title>
+  <meta name="description" content="Convertisseur Markdown ⇄ HTML avec aperçu, CSS custom, copie et export." />
+  <style>
+    :root{
+      --bg: #f6f7fb;
+      --panel: rgba(255,255,255,.86);
+      --panelSolid: #ffffff;
+      --border: rgba(15, 23, 42, .10);
+      --border2: rgba(15, 23, 42, .14);
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, .62);
+      --muted2: rgba(15, 23, 42, .48);
+      --accent: #4f46e5;
+      --accent2: #4338ca;
+      --good: #16a34a;
+      --warn: #d97706;
+      --bad: #dc2626;
+
+      --shadow: 0 12px 30px rgba(2, 6, 23, .10);
+      --shadow2: 0 8px 18px rgba(2, 6, 23, .08);
+      --r-lg: 18px;
+      --r-md: 14px;
+      --r-sm: 12px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+
+    }
+
+    /* Layout */
+    .app{
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow2);
+    }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .logo{
+      width: 38px; height: 38px;
+      border-radius: 14px;
+      background: #1FA3A1;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      user-select: none;
+    }
+    .brand h1{
+      font-size: 15px;
+      margin: 0;
+      letter-spacing: -.02em;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .brand p{
+      margin: 2px 0 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .topControls{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* Segmented control */
+    .seg{
+      display: inline-flex;
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.75);
+      border-radius: 999px;
+      padding: 4px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+    .seg button{
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .seg button[aria-pressed="true"]{
+      background: #1FA3A1;
+      color: #fff;
+    }
+    .pill{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.75);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border: 1px solid var(--border2);
+      border-bottom-color: rgba(15,23,42,.18);
+      background: rgba(255,255,255,.9);
+      border-radius: 8px;
+      color: rgba(15,23,42,.7);
+    }
+
+    main{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      flex: 1;
+    }
+
+    @media (min-width: 980px){
+      main{
+        grid-template-columns: 1.25fr .95fr;
+        align-items: start;
+      }
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow2);
+      overflow: hidden;
+    }
+
+    /* Tabs */
+    .tabs{
+      display: flex;
+      gap: 6px;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.55);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .tabBtn{
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tabBtn[aria-selected="true"]{
+      background: rgba(79,70,229,.10);
+      border-color: rgba(79,70,229,.25);
+      color: rgba(79,70,229,1);
+    }
+
+    .tabSpacer{ flex: 1; }
+    .smallText{
+      font-size: 12px;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .dot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: rgba(16,185,129,.9);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+    }
+    .dot.warn{ background: rgba(245,158,11,.95); box-shadow: 0 0 0 4px rgba(245,158,11,.14); }
+    .dot.bad{ background: rgba(239,68,68,.95); box-shadow: 0 0 0 4px rgba(239,68,68,.14); }
+
+    .tabPanel{
+      display: none;
+      padding: 12px;
+    }
+    .tabPanel.active{ display: block; }
+
+    /* Form controls */
+    label{
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(15,23,42,.74);
+      margin: 0 0 8px 2px;
+    }
+    textarea{
+      width: 100%;
+      min-height: 320px;
+      resize: vertical;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.9);
+      padding: 12px 12px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: rgba(15,23,42,.9);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea:focus{
+      border-color: rgba(79,70,229,.45);
+      box-shadow: 0 0 0 4px rgba(79,70,229,.14), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .row{
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .btn{
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.85);
+      color: rgba(15,23,42,.82);
+      font-weight: 800;
+      font-size: 12px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+    .btn:hover{
+      border-color: rgba(79,70,229,.30);
+      box-shadow: 0 10px 20px rgba(15,23,42,.08);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: #1FA3A1;
+      background: #1FA3A1;
+      color: #fff;
+    }
+    .btn.danger{
+      border-color: rgba(239,68,68,.35);
+      background: rgba(239,68,68,.10);
+      color: rgba(185,28,28,.95);
+    }
+
+    .counter{
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 18px;
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* Options */
+    .options{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (min-width: 560px){
+      .options{
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .opt{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.65);
+      border-radius: var(--r-md);
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .opt .title{
+      font-size: 12px;
+      font-weight: 900;
+      color: rgba(15,23,42,.78);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .opt .desc{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .switch{
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .switch input{
+      appearance: none;
+      width: 44px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: rgba(15,23,42,.08);
+      position: relative;
+      cursor: pointer;
+      outline: none;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .switch input:focus{
+      box-shadow: 0 0 0 4px rgba(79,70,229,.14);
+      border-color: rgba(79,70,229,.35);
+    }
+    .switch input::after{
+      content:"";
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: #fff;
+      position: absolute;
+      top: 50%;
+      left: 3px;
+      transform: translateY(-50%);
+      box-shadow: 0 6px 14px rgba(2,6,23,.16);
+      transition: left .15s ease, background .15s ease;
+    }
+    .switch input:checked{
+      background: rgba(79,70,229,.35);
+      border-color: rgba(79,70,229,.35);
+    }
+    .switch input:checked::after{ left: 21px; }
+
+    select{
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border2);
+      padding: 10px 10px;
+      background: rgba(255,255,255,.9);
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(15,23,42,.82);
+      outline: none;
+    }
+    select:focus{
+      border-color: rgba(79,70,229,.45);
+      box-shadow: 0 0 0 4px rgba(79,70,229,.14);
+    }
+
+    /* Preview */
+    .previewWrap{
+      border-radius: var(--r-md);
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.9);
+      overflow: hidden;
+      min-height: 420px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    iframe{
+      width: 100%;
+      height: 520px;
+      border: 0;
+      display: block;
+      background: white;
+    }
+
+    /* Side card (cheatsheet) */
+    .cheat{
+      padding: 12px 12px 14px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .cheat h3{
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      letter-spacing: -.01em;
+    }
+    .grid2{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 980px){
+      .grid2{
+        grid-template-columns: 1fr;
+      }
+    }
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      border: 1px dashed rgba(15,23,42,.16);
+      background: rgba(255,255,255,.55);
+      border-radius: var(--r-md);
+      padding: 10px;
+    }
+    .hint code{ font-family: var(--mono); font-size: 11.5px; }
+
+    /* Footer */
+    footer{
+      padding: 10px 4px 4px 4px;
+      color: var(--muted2);
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    a{
+      color: rgba(79,70,229,1);
+      text-decoration: none;
+      font-weight: 800;
+    }
+    a:hover{ text-decoration: underline; }
+
+    /* Focus visibility */
+    :focus-visible{
+      outline: 3px solid rgba(79,70,229,.35);
+      outline-offset: 2px;
+      border-radius: 10px;
+    }
+
+    /* Icon-ish */
+    .ic{
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      vertical-align: -3px;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      *{ transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="brand" aria-label="Convertisseur Markdown et HTML">
+        <div class="logo" aria-hidden="true">⇄</div>
+        <div style="min-width:0">
+          <h1>Markdown ⇄ HTML</h1>
+          <p>Conversion bidirectionnelle · Aperçu sécurisé · CSS custom · Export</p>
+        </div>
+      </div>
+
+      <div class="topControls">
+        <div class="seg" role="group" aria-label="Mode de conversion">
+          <button id="modeMdToHtml" type="button" aria-pressed="true" title="Convertir Markdown vers HTML">
+            <span aria-hidden="true">📝</span> Markdown → HTML
+          </button>
+          <button id="modeHtmlToMd" type="button" aria-pressed="false" title="Convertir HTML vers Markdown">
+            <span aria-hidden="true">🌐</span> HTML → Markdown
+          </button>
+        </div>
+
+        <div class="pill" title="Raccourcis">
+          <span aria-hidden="true">⌘</span>
+          <span>Copier:</span>
+          <span class="kbd">Ctrl/⌘</span><span class="kbd">C</span>
+          <span class="kbd">Ctrl/⌘</span><span class="kbd">⇧</span><span class="kbd">C</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Left: Input/CSS/Options -->
+      <section class="card" aria-label="Éditeur et options">
+        <div class="tabs" role="tablist" aria-label="Panneaux">
+          <button class="tabBtn" role="tab" id="tabInput" aria-selected="true" aria-controls="panelInput">
+            ✍️ Input
+          </button>
+          <button class="tabBtn" role="tab" id="tabCss" aria-selected="false" aria-controls="panelCss">
+            🎨 Custom CSS
+          </button>
+          <button class="tabBtn" role="tab" id="tabOptions" aria-selected="false" aria-controls="panelOptions">
+            ⚙️ Options
+          </button>
+
+          <div class="tabSpacer"></div>
+          <div class="smallText" aria-live="polite" title="Statut">
+            <span id="statusDot" class="dot" aria-hidden="true"></span>
+            <span id="statusText">Prêt</span>
+          </div>
+        </div>
+
+        <div class="tabPanel active" id="panelInput" role="tabpanel" aria-labelledby="tabInput">
+          <label for="inputArea" id="inputLabel">Markdown (entrée)</label>
+          <textarea id="inputArea" spellcheck="false" aria-describedby="inputHelp"></textarea>
+          <div class="row">
+            <button class="btn primary" id="btnCopyOutput" type="button">
+              <span aria-hidden="true">📋</span> Copier la sortie
+            </button>
+            <button class="btn" id="btnDownload" type="button">
+              <span aria-hidden="true">⬇️</span> Télécharger
+            </button>
+            <button class="btn danger" id="btnClear" type="button">
+              <span aria-hidden="true">🧹</span> Vider
+            </button>
+            <div class="counter" aria-label="Compteurs">
+              <span><strong id="inCount">0</strong> caractères (entrée)</span>
+              <span>·</span>
+              <span><strong id="outCount">0</strong> caractères (sortie)</span>
+            </div>
+          </div>
+          <div id="inputHelp" class="hint" style="margin-top:10px">
+            Astuce : le rendu est mis à jour en temps réel. Le panneau “Preview” affiche toujours le HTML final (sanitizé).
+          </div>
+        </div>
+
+        <div class="tabPanel" id="panelCss" role="tabpanel" aria-labelledby="tabCss">
+          <label for="cssArea">CSS custom (appliqué au Preview)</label>
+          <textarea id="cssArea" spellcheck="false" aria-describedby="cssHelp"></textarea>
+          <div id="cssHelp" class="hint" style="margin-top:10px">
+            Exemple : <code>body { font-family: system-ui; } h1 { letter-spacing:-.02em; }</code>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnResetCss" type="button">
+              <span aria-hidden="true">↩️</span> Réinitialiser le CSS
+            </button>
+          </div>
+        </div>
+
+        <div class="tabPanel" id="panelOptions" role="tabpanel" aria-labelledby="tabOptions">
+          <div class="options">
+            <div class="opt">
+              <div class="title">
+                <span>Sanitizer HTML</span>
+                <span class="switch">
+                  <input id="optSanitize" type="checkbox" checked aria-label="Activer le nettoyage (sanitization) HTML" />
+                </span>
+              </div>
+              <div class="desc">Recommandé : évite l’injection de scripts dans l’aperçu.</div>
+            </div>
+
+            <div class="opt">
+              <div class="title">
+                <span>Liens en nouvel onglet</span>
+                <span class="switch">
+                  <input id="optNewTab" type="checkbox" checked aria-label="Ouvrir les liens en nouvel onglet" />
+                </span>
+              </div>
+              <div class="desc">Ajoute <code>target="_blank"</code> + <code>rel="noopener noreferrer"</code>.</div>
+            </div>
+
+            <div class="opt" id="optBoxHeading">
+              <div class="title"><span>Style des titres (H→M)</span></div>
+              <div class="desc">
+                <select id="optHeadingStyle" aria-label="Style des titres Turndown">
+                  <option value="setext">setext (== / --)</option>
+                  <option value="atx" selected>atx (#)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="opt" id="optBoxBullets">
+              <div class="title"><span>Puces (H→M)</span></div>
+              <div class="desc">
+                <select id="optBullet" aria-label="Marqueur de liste">
+                  <option value="-" selected>-</option>
+                  <option value="*">*</option>
+                  <option value="+">+</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="btnResetAll" type="button">
+              <span aria-hidden="true">🧩</span> Reset (défauts)
+            </button>
+            <span class="hint" style="margin:0; flex:1; min-width:240px">
+              Les réglages et vos textes sont sauvegardés automatiquement (localStorage).
+            </span>
+          </div>
+        </div>
+
+        <div class="cheat">
+          <h3>Mini-cheatsheet</h3>
+          <div class="grid2">
+            <div class="hint">
+              <div><strong>Markdown</strong> : <code># Titre</code>, <code>**gras**</code>, <code>*italique*</code>, <code>- liste</code></div>
+              <div>Code : <code>`inline`</code> ou bloc :</div>
+              <div><code>```js</code><br><code>console.log("ok")</code><br><code>```</code></div>
+            </div>
+            <div class="hint">
+              <div><strong>HTML</strong> : <code>&lt;h1&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;a href=""&gt;</code>, <code>&lt;pre&gt;&lt;code&gt;</code></div>
+              <div>Astuce : le preview est isolé (iframe) + CSS custom par-dessus.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Preview/Raw output -->
+      <section class="card" aria-label="Aperçu et sortie">
+        <div class="tabs" role="tablist" aria-label="Panneaux de sortie">
+          <button class="tabBtn" role="tab" id="tabPreview" aria-selected="true" aria-controls="panelPreview">
+            👁️ Preview
+          </button>
+          <button class="tabBtn" role="tab" id="tabRaw" aria-selected="false" aria-controls="panelRaw">
+            🧾 Raw output
+          </button>
+          <div class="tabSpacer"></div>
+          <div class="smallText" title="Type de sortie">
+            <span aria-hidden="true">🗂️</span>
+            <span id="outputTypeLabel">HTML</span>
+          </div>
+        </div>
+
+        <div class="tabPanel active" id="panelPreview" role="tabpanel" aria-labelledby="tabPreview">
+          <div class="previewWrap" aria-label="Aperçu HTML">
+            <iframe id="previewFrame" title="Aperçu HTML sécurisé"></iframe>
+          </div>
+        </div>
+
+        <div class="tabPanel" id="panelRaw" role="tabpanel" aria-labelledby="tabRaw">
+          <label for="outputArea" id="outputLabel">HTML (sortie brute)</label>
+          <textarea id="outputArea" spellcheck="false" readonly></textarea>
+          <div class="row">
+            <button class="btn" id="btnCopyRaw" type="button">
+              <span aria-hidden="true">📄</span> Copier (raw)
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- CDN deps 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turndown/dist/turndown.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script> -->
+    <script src="/js/marked.min.js"></script>
+  <script src="/js/turndown.min.js"></script>
+  <script src="/js/purify.min.js"></script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      // ---------- DOM ----------
+      const $ = (sel) => document.querySelector(sel);
+
+      const modeMdToHtmlBtn = $("#modeMdToHtml");
+      const modeHtmlToMdBtn = $("#modeHtmlToMd");
+
+      const tabInput = $("#tabInput");
+      const tabCss = $("#tabCss");
+      const tabOptions = $("#tabOptions");
+
+      const panelInput = $("#panelInput");
+      const panelCss = $("#panelCss");
+      const panelOptions = $("#panelOptions");
+
+      const tabPreview = $("#tabPreview");
+      const tabRaw = $("#tabRaw");
+      const panelPreview = $("#panelPreview");
+      const panelRaw = $("#panelRaw");
+
+      const inputLabel = $("#inputLabel");
+      const outputLabel = $("#outputLabel");
+      const outputTypeLabel = $("#outputTypeLabel");
+
+      const inputArea = $("#inputArea");
+      const cssArea = $("#cssArea");
+      const outputArea = $("#outputArea");
+
+      const previewFrame = $("#previewFrame");
+
+      const btnCopyOutput = $("#btnCopyOutput");
+      const btnCopyRaw = $("#btnCopyRaw");
+      const btnDownload = $("#btnDownload");
+      const btnClear = $("#btnClear");
+      const btnResetCss = $("#btnResetCss");
+      const btnResetAll = $("#btnResetAll");
+
+      const inCount = $("#inCount");
+      const outCount = $("#outCount");
+
+      const statusDot = $("#statusDot");
+      const statusText = $("#statusText");
+
+      const optSanitize = $("#optSanitize");
+      const optNewTab = $("#optNewTab");
+      const optHeadingStyle = $("#optHeadingStyle");
+      const optBullet = $("#optBullet");
+
+      const optBoxHeading = $("#optBoxHeading");
+      const optBoxBullets = $("#optBoxBullets");
+
+      const toast = $("#toast");
+
+      // ---------- State ----------
+      const STORAGE_KEY = "md_html_converter_v1";
+      const state = {
+        mode: "md2html", // "md2html" | "html2md"
+        input: "",
+        css: "",
+        output: "",
+        options: {
+          sanitize: true,
+          newTab: true,
+          headingStyle: "atx",
+          bullet: "-"
+        },
+        ui: {
+          leftTab: "input",   // input|css|options
+          rightTab: "preview" // preview|raw
+        }
+      };
+
+      const DEFAULT_CSS = `/* CSS custom (appliqué au Preview) */
+body{
+  line-height: 1.65;
+}
+a{
+  color: #4f46e5;
+}
+pre{
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15,23,42,.04);
+  overflow: auto;
+}
+code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+blockquote{
+  border-left: 4px solid rgba(79,70,229,.35);
+  margin-left: 0;
+  padding-left: 12px;
+  color: rgba(15,23,42,.72);
+}
+table{
+  border-collapse: collapse;
+}
+th, td{
+  border: 1px solid rgba(15,23,42,.16);
+  padding: 8px 10px;
+}
+`;
+
+      const SAMPLE_MD = `# Démo Markdown
+
+Écris du **Markdown**, récupère du HTML.
+
+- ✅ Tables, listes, code
+- ✅ Aperçu (sanitizé)
+- ✅ CSS custom
+
+> Astuce : essaie aussi \`HTML → Markdown\`.
+
+\`\`\`js
+console.log("Bonjour 👋");
+\`\`\`
+
+Lien : https://example.com
+`;
+
+      const SAMPLE_HTML = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Démo HTML</title>
+  </head>
+  <body>
+    <h1>Démo HTML</h1>
+    <p>Colle du <strong>HTML</strong>, récupère du Markdown.</p>
+    <ul>
+      <li>Listes</li>
+      <li>Liens <a href="https://example.com">Example</a></li>
+      <li><code>inline code</code></li>
+    </ul>
+    <pre><code class="language-js">console.log("ok")</code></pre>
+    <blockquote>Bloc citation</blockquote>
+  </body>
+</html>`;
+
+      // ---------- Utils ----------
+      function debounce(fn, wait = 220) {
+        let t = null;
+        return (...args) => {
+          clearTimeout(t);
+          t = setTimeout(() => fn(...args), wait);
+        };
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.clearTimeout(showToast._t);
+        showToast._t = window.setTimeout(() => toast.classList.remove("show"), 1400);
+      }
+
+      function setStatus(kind, message) {
+        // kind: ok | warn | bad
+        statusDot.classList.remove("warn","bad");
+        if (kind === "warn") statusDot.classList.add("warn");
+        if (kind === "bad") statusDot.classList.add("bad");
+        statusText.textContent = message;
+      }
+
+      function countChars() {
+        inCount.textContent = String(inputArea.value.length);
+        outCount.textContent = String(outputArea.value.length);
+      }
+
+      function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, (c) => ({
+          "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+        }[c]));
+      }
+
+      // ---------- Conversion ----------
+      function configureMarked() {
+        // GFM defaults are already decent; enforce options for tables, breaks, etc.
+        marked.setOptions({
+          gfm: true,
+          breaks: false,
+          headerIds: false,
+          mangle: false
+        });
+      }
+
+      function addNewTabAttrs(html) {
+        if (!state.options.newTab) return html;
+        // Add target and rel to <a ...> that don't already have a target
+        // Lightweight approach: parse via DOM, mutate, serialize
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        doc.querySelectorAll("a[href]").forEach(a => {
+          const href = a.getAttribute("href") || "";
+          // ignore anchors and javascript: links (also cleaned by purifier normally)
+          if (href.startsWith("#")) return;
+          if (/^\s*javascript:/i.test(href)) return;
+          a.setAttribute("target", "_blank");
+          a.setAttribute("rel", "noopener noreferrer");
+        });
+        return doc.body.innerHTML;
+      }
+
+      function convertMarkdownToHtml(md) {
+        configureMarked();
+        let html = marked.parse(md || "");
+        html = addNewTabAttrs(html);
+        return html;
+      }
+
+      function createTurndown() {
+        const service = new TurndownService({
+          headingStyle: state.options.headingStyle,    // 'setext' or 'atx'
+          bulletListMarker: state.options.bullet,      // '-', '*', '+'
+          codeBlockStyle: "fenced",
+          emDelimiter: "*",
+          strongDelimiter: "**",
+        });
+
+        // Keep <br> as line breaks
+        service.addRule("lineBreak", {
+          filter: "br",
+          replacement: function () { return "  \n"; }
+        });
+
+        // Better fenced code blocks with language if present
+        service.addRule("fencedCodeBlockWithLanguage", {
+          filter: function (node) {
+            return (
+              node.nodeName === "PRE" &&
+              node.firstChild &&
+              node.firstChild.nodeName === "CODE"
+            );
+          },
+          replacement: function (content, node) {
+            const codeNode = node.firstChild;
+            const className = codeNode.getAttribute("class") || "";
+            const match = className.match(/language-([a-z0-9_-]+)/i);
+            const lang = match ? match[1] : "";
+            const code = codeNode.textContent || "";
+            return "\n```" + lang + "\n" + code.replace(/\n$/, "") + "\n```\n";
+          }
+        });
+
+        // Preserve tables reasonably (Turndown does not do tables by default)
+        // We'll keep table HTML as-is; user can post-process if desired.
+        service.keep(["table","thead","tbody","tr","th","td"]);
+
+        return service;
+      }
+
+      function convertHtmlToMarkdown(html) {
+        const service = createTurndown();
+        // If user pastes a whole document, parse and use body
+        const doc = new DOMParser().parseFromString(html || "", "text/html");
+        const bodyHtml = doc.body ? doc.body.innerHTML : (html || "");
+        return service.turndown(bodyHtml);
+      }
+
+      function sanitizeHtml(html) {
+        if (!state.options.sanitize) return html;
+        return DOMPurify.sanitize(html, {
+          USE_PROFILES: { html: true }
+        });
+      }
+
+      // ---------- Preview ----------
+      function basePreviewCss() {
+        // Minimal readable baseline, then user CSS layered above.
+        return `
+          :root{
+            color-scheme: light;
+          }
+          body{
+            margin: 0;
+            padding: 18px;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            color: rgba(15,23,42,.92);
+          }
+          h1,h2,h3{ letter-spacing:-.02em; margin: 0.65em 0 0.35em; }
+          p{ margin: 0.45em 0; }
+          a{ color: #4f46e5; font-weight: 650; }
+          hr{ border: 0; border-top: 1px solid rgba(15,23,42,.12); margin: 16px 0; }
+          img{ max-width: 100%; height: auto; border-radius: 12px; }
+          pre{ white-space: pre; }
+          code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+          table{ width: 100%; }
+        `;
+      }
+
+      function writePreview(htmlContent) {
+        const custom = cssArea.value || "";
+        const doc = `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      ${basePreviewCss()}
+      ${custom}
+    </style>
+  </head>
+  <body>
+    ${htmlContent}
+  </body>
+</html>`;
+        const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(doc);
+        iframeDoc.close();
+      }
+
+      // ---------- UI Tabs ----------
+      function setTab(group, which) {
+        if (group === "left") {
+          state.ui.leftTab = which;
+          [tabInput, tabCss, tabOptions].forEach(b => b.setAttribute("aria-selected","false"));
+          [panelInput, panelCss, panelOptions].forEach(p => p.classList.remove("active"));
+          if (which === "input") { tabInput.setAttribute("aria-selected","true"); panelInput.classList.add("active"); }
+          if (which === "css") { tabCss.setAttribute("aria-selected","true"); panelCss.classList.add("active"); }
+          if (which === "options") { tabOptions.setAttribute("aria-selected","true"); panelOptions.classList.add("active"); }
+        } else {
+          state.ui.rightTab = which;
+          [tabPreview, tabRaw].forEach(b => b.setAttribute("aria-selected","false"));
+          [panelPreview, panelRaw].forEach(p => p.classList.remove("active"));
+          if (which === "preview") { tabPreview.setAttribute("aria-selected","true"); panelPreview.classList.add("active"); }
+          if (which === "raw") { tabRaw.setAttribute("aria-selected","true"); panelRaw.classList.add("active"); }
+        }
+        persistState();
+      }
+
+      // ---------- Mode ----------
+      function setMode(mode) {
+        state.mode = mode;
+        const isMd = mode === "md2html";
+
+        modeMdToHtmlBtn.setAttribute("aria-pressed", isMd ? "true" : "false");
+        modeHtmlToMdBtn.setAttribute("aria-pressed", isMd ? "false" : "true");
+
+        inputLabel.textContent = isMd ? "Markdown (entrée)" : "HTML (entrée)";
+        outputLabel.textContent = isMd ? "HTML (sortie brute)" : "Markdown (sortie brute)";
+        outputTypeLabel.textContent = isMd ? "HTML" : "Markdown";
+
+        // Show/hide H→M option boxes
+        optBoxHeading.style.display = isMd ? "none" : "grid";
+        optBoxBullets.style.display = isMd ? "none" : "grid";
+
+        // If input is empty, set a sample suitable for the mode
+        if (!inputArea.value.trim()) {
+          inputArea.value = isMd ? SAMPLE_MD : SAMPLE_HTML;
+        }
+
+        convertAndRender();
+        persistState();
+      }
+
+      // ---------- Persist ----------
+      function persistState() {
+        state.input = inputArea.value;
+        state.css = cssArea.value;
+        state.options.sanitize = optSanitize.checked;
+        state.options.newTab = optNewTab.checked;
+        state.options.headingStyle = optHeadingStyle.value;
+        state.options.bullet = optBullet.value;
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      function restoreState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) throw new Error("no state");
+          const saved = JSON.parse(raw);
+
+          if (saved && typeof saved === "object") {
+            // shallow merge for robustness
+            if (saved.mode) state.mode = saved.mode;
+            if (typeof saved.input === "string") state.input = saved.input;
+            if (typeof saved.css === "string") state.css = saved.css;
+            if (saved.options) state.options = { ...state.options, ...saved.options };
+            if (saved.ui) state.ui = { ...state.ui, ...saved.ui };
+          }
+        } catch (e) {
+          // defaults
+        }
+
+        inputArea.value = state.input || "";
+        cssArea.value = state.css || DEFAULT_CSS;
+
+        optSanitize.checked = !!state.options.sanitize;
+        optNewTab.checked = !!state.options.newTab;
+        optHeadingStyle.value = state.options.headingStyle || "atx";
+        optBullet.value = state.options.bullet || "-";
+
+        setTab("left", state.ui.leftTab || "input");
+        setTab("right", state.ui.rightTab || "preview");
+        setMode(state.mode || "md2html");
+
+        if (!inputArea.value.trim()) {
+          inputArea.value = (state.mode === "md2html") ? SAMPLE_MD : SAMPLE_HTML;
+        }
+      }
+
+      // ---------- Main pipeline ----------
+      function convertAndRender() {
+        const input = inputArea.value || "";
+        let rawOutput = "";
+        let htmlForPreview = "";
+        let kind = "ok";
+        let msg = "Prêt";
+
+        try {
+          if (state.mode === "md2html") {
+            rawOutput = convertMarkdownToHtml(input);
+            htmlForPreview = rawOutput;
+          } else {
+            rawOutput = convertHtmlToMarkdown(input);
+            // preview should show HTML final; here we preview the original HTML (sanitized)
+            // Alternative: show HTML that would result from re-converting markdown back to HTML, but that adds drift.
+            htmlForPreview = input;
+          }
+
+          // Preview pipeline: sanitize + apply newTab attrs (only matters when previewing HTML)
+          let sanitized = sanitizeHtml(htmlForPreview || "");
+          if (state.options.newTab) sanitized = addNewTabAttrs(sanitized);
+
+          outputArea.value = rawOutput || "";
+          writePreview(sanitized || "");
+
+          msg = "Converti";
+          kind = "ok";
+        } catch (e) {
+          kind = "warn";
+          msg = "Erreur de conversion";
+          outputArea.value = "";
+          writePreview(`<p style="color:#dc2626;font-weight:700">Erreur: ${escapeHtml(String(e.message || e))}</p>`);
+        }
+
+        setStatus(kind, msg);
+        countChars();
+        persistState();
+      }
+
+      const convertAndRenderDebounced = debounce(convertAndRender, 240);
+
+      // ---------- Clipboard & Download ----------
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("Copié ✅");
+          return true;
+        } catch (e) {
+          // fallback
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            showToast("Copié ✅");
+            return true;
+          } catch (e2) {
+            showToast("Impossible de copier");
+            return false;
+          }
+        }
+      }
+
+      function downloadText(filename, content) {
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("Téléchargé ⬇️");
+      }
+
+      // ---------- Events ----------
+      function bindTabs() {
+        tabInput.addEventListener("click", () => setTab("left","input"));
+        tabCss.addEventListener("click", () => setTab("left","css"));
+        tabOptions.addEventListener("click", () => setTab("left","options"));
+
+        tabPreview.addEventListener("click", () => setTab("right","preview"));
+        tabRaw.addEventListener("click", () => setTab("right","raw"));
+      }
+
+      function bindMode() {
+        modeMdToHtmlBtn.addEventListener("click", () => setMode("md2html"));
+        modeHtmlToMdBtn.addEventListener("click", () => setMode("html2md"));
+      }
+
+      function bindInputs() {
+        inputArea.addEventListener("input", () => {
+          setStatus("ok","…");
+          convertAndRenderDebounced();
+        });
+        cssArea.addEventListener("input", () => {
+          setStatus("ok","…");
+          convertAndRenderDebounced();
+        });
+
+        optSanitize.addEventListener("change", convertAndRender);
+        optNewTab.addEventListener("change", convertAndRender);
+        optHeadingStyle.addEventListener("change", convertAndRender);
+        optBullet.addEventListener("change", convertAndRender);
+      }
+
+      function bindActions() {
+        btnCopyOutput.addEventListener("click", () => {
+          copyToClipboard(outputArea.value || "");
+        });
+
+        btnCopyRaw.addEventListener("click", () => {
+          copyToClipboard(outputArea.value || "");
+        });
+
+        btnDownload.addEventListener("click", () => {
+          const isMd = state.mode === "html2md";
+          const ext = isMd ? "md" : "html";
+          const filename = `convert.${ext}`;
+          downloadText(filename, outputArea.value || "");
+        });
+
+        btnClear.addEventListener("click", () => {
+          inputArea.value = "";
+          outputArea.value = "";
+          setStatus("ok","Vidé");
+          countChars();
+          persistState();
+          convertAndRender();
+        });
+
+        btnResetCss.addEventListener("click", () => {
+          cssArea.value = DEFAULT_CSS;
+          convertAndRender();
+          showToast("CSS réinitialisé");
+        });
+
+        btnResetAll.addEventListener("click", () => {
+          // Reset state and localStorage
+          try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+          state.mode = "md2html";
+          state.input = "";
+          state.css = DEFAULT_CSS;
+          state.options = { sanitize: true, newTab: true, headingStyle: "atx", bullet: "-" };
+          state.ui = { leftTab: "input", rightTab: "preview" };
+
+          inputArea.value = SAMPLE_MD;
+          cssArea.value = DEFAULT_CSS;
+          optSanitize.checked = true;
+          optNewTab.checked = true;
+          optHeadingStyle.value = "atx";
+          optBullet.value = "-";
+          setTab("left","input");
+          setTab("right","preview");
+          setMode("md2html");
+          showToast("Défauts restaurés");
+        });
+
+        // Nice keyboard shortcut: Ctrl/⌘ + Shift + C copies output
+        window.addEventListener("keydown", (e) => {
+          const isMac = navigator.platform.toLowerCase().includes("mac");
+          const mod = isMac ? e.metaKey : e.ctrlKey;
+          if (mod && e.shiftKey && e.key.toLowerCase() === "c") {
+            e.preventDefault();
+            copyToClipboard(outputArea.value || "");
+          }
+        });
+      }
+
+      // ---------- Init ----------
+      function init() {
+        bindTabs();
+        bindMode();
+        bindInputs();
+        bindActions();
+
+        // Ensure iframe exists before writing
+        previewFrame.addEventListener("load", () => {
+          // no-op
+        });
+
+        restoreState();
+        convertAndRender();
+      }
+
+      // Wait for deps
+      function depsReady() {
+        return (window.marked && window.TurndownService && window.DOMPurify);
+      }
+
+      (function waitForDeps(){
+        if (depsReady()) {
+          init();
+        } else {
+          setStatus("warn","Chargement libs…");
+          setTimeout(waitForDeps, 60);
+        }
+      })();
+
+    })();
+  </script>
+</body>
+</html>
